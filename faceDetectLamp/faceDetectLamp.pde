@@ -1,59 +1,83 @@
-//import gohai.glvideo.*;
-import processing.video.*;
-import gab.opencv.*;
-import java.awt.Rectangle;
+/*
+Source code from:
+ * Which Face Is Which
+ * Daniel Shiffman
+ * http://shiffman.net/2011/04/26/opencv-matching-faces-over-time/
+ * Modified by Jordi Tost (call the constructor specifying an ID)
+ * @updated: 01/10/2014
+ 
 
-OpenCV opencv;
-Rectangle[] faces;
+*/
+
+import gab.opencv.*;
+import processing.video.*;
+import java.awt.*;
 
 Capture video;
-//GLCapture video;
+OpenCV opencv;
 
-void setup() {
-  size(1920, 1080);
-  /*
-  String[] devices = GLCapture.list();
-  println("Devices:");
-  printArray(devices);
-  if (0 < devices.length) {
-    String[] configs = GLCapture.configs(devices[0]);
-    println("Configs:");
-    printArray(configs);
+class Face {
+  
+  // A Rectangle
+  Rectangle r;
+  // Show me
+  void display() {
+    fill(0,0,255);
+    stroke(0,0,255);
+    rect(r.x,r.y,r.width, r.height);
+    //rect(r.x*scl,r.y*scl,r.width*scl, r.height*scl);
+    fill(255);
+    //text(""+id,r.x+10,r.y+30);
+    //text(""+id,r.x*scl+10,r.y*scl+30);
+    //text(""+id,r.x*scl+10,r.y*scl+30);
   }
-  
-  video = new GLCapture(this);
-  video.start();
-  */
-  video = new Capture(this, 1080, 720);
-  video.start();
-  
-  opencv = new OpenCV(this, video);
-  opencv.loadCascade(OpenCV.CASCADE_FRONTALFACE);  
-  faces = opencv.detect();
+
+  // Give me a new location / size
+  // Oooh, it would be nice to lerp here!
+  void update(Rectangle newR) {
+    r = (Rectangle) newR.clone();
+  }
+
 }
 
-void captureEvent(Capture video) {
-  video.read();
+// List of detected faces (every frame)
+Rectangle[] faces;
+
+// Scaling down the video
+int scl = 2;
+
+void setup() {
+  size(640, 480);
+  video = new Capture(this, width/scl, height/scl);
+  opencv = new OpenCV(this, width/scl, height/scl);
+  opencv.loadCascade(OpenCV.CASCADE_FRONTALFACE);  
+  
+  video.start();
 }
 
 void draw() {
-  background(0);
-  
-  /*
-  if (video.available()) {
-    video.read();
-  }
-  */
-  
-  image(video, 0, 0, width, height);
-  
-  
-  image(opencv.getInput(), 0, 0);
+  scale(scl);
+  opencv.loadImage(video);
 
-  noFill();
-  stroke(0, 255, 0);
-  strokeWeight(3);
+  image(video, 0, 0 );
+  
+  detectFaces();
+
+  // Draw all the faces
   for (int i = 0; i < faces.length; i++) {
+    noFill();
+    strokeWeight(5);
+    stroke(255,0,0);
+    //rect(faces[i].x*scl,faces[i].y*scl,faces[i].width*scl,faces[i].height*scl);
     rect(faces[i].x, faces[i].y, faces[i].width, faces[i].height);
   }
+}
+
+void detectFaces() {
+  // Faces detected in this frame
+  faces = opencv.detect();
+}
+
+void captureEvent(Capture c) {
+  c.read();
 }
