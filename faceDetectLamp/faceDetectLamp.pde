@@ -12,9 +12,12 @@ Source code from:
 import gab.opencv.*;
 import processing.video.*;
 import java.awt.*;
+import processing.serial.*;
+
 
 Capture video;
 OpenCV opencv;
+Serial port;
 
 class Face {
   
@@ -22,18 +25,11 @@ class Face {
   Rectangle r;
   // Show me
   void display() {
-    fill(0,0,255);
     stroke(0,0,255);
     rect(r.x,r.y,r.width, r.height);
-    //rect(r.x*scl,r.y*scl,r.width*scl, r.height*scl);
-    fill(255);
-    //text(""+id,r.x+10,r.y+30);
-    //text(""+id,r.x*scl+10,r.y*scl+30);
-    //text(""+id,r.x*scl+10,r.y*scl+30);
   }
 
   // Give me a new location / size
-  // Oooh, it would be nice to lerp here!
   void update(Rectangle newR) {
     r = (Rectangle) newR.clone();
   }
@@ -43,20 +39,22 @@ class Face {
 // List of detected faces (every frame)
 Rectangle[] faces;
 
-// Scaling down the video
-int scl = 2;
 
 void setup() {
   size(640, 480);
-  video = new Capture(this, width/scl, height/scl);
-  opencv = new OpenCV(this, width/scl, height/scl);
+  video = new Capture(this, width/2, height/2);
+  
+  opencv = new OpenCV(this, width/2, height/2);
   opencv.loadCascade(OpenCV.CASCADE_FRONTALFACE);  
   
   video.start();
+  
+  String portName =Serial.list()[2];
+  port = new Serial(this, portName, 9600);
 }
 
 void draw() {
-  scale(scl);
+  scale(2);
   opencv.loadImage(video);
 
   image(video, 0, 0 );
@@ -76,6 +74,14 @@ void draw() {
 void detectFaces() {
   // Faces detected in this frame
   faces = opencv.detect();
+  if (faces.length > 0) {
+   fill(100, 0, 150);
+   noStroke();
+   rect(0, 0, 50, 50);
+    port.write(255);
+  } else {
+    port.write(100);
+  }
 }
 
 void captureEvent(Capture c) {
